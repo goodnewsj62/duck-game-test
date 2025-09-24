@@ -28,12 +28,11 @@ const protectedRoutes: ExtendedRouteObject[] = [
     index: true,
   },
   {
-    path: "/play",
+    path: "/play/:id",
     hasErrorBoundary: true,
     element: <GamePage />,
     errorElement: <AppErrorBoundary />,
     protected: true,
-    index: true,
   },
 ];
 
@@ -50,8 +49,6 @@ const unProtectedRoute: ExtendedRouteObject[] = [
     hasErrorBoundary: true,
     element: <RegisterPage />,
     errorElement: <AppErrorBoundary />,
-    protected: true,
-    index: true,
   },
 ];
 

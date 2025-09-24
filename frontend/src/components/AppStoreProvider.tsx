@@ -3,12 +3,13 @@ import { createContext, useState, type PropsWithChildren } from "react";
 type AppStoreProviderProps = PropsWithChildren;
 
 const initialState = {
-  userName: "",
+  username: "",
   timezone: "",
+  role: "SURVIVOR",
 };
 
 export type storeType = typeof initialState & {
-  setState: React.Dispatch<React.SetStateAction<storeType>>;
+  setState: React.Dispatch<React.SetStateAction<storeType | undefined>>;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components

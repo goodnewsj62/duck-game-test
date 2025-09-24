@@ -1,3 +1,5 @@
+import GameWelcomeText from "@/components/GameWelcomeText";
+import { appAxios } from "@/http";
 import {
   Button,
   Card,
@@ -5,9 +7,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import axios from "axios";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 const RegisterPage = () => {
@@ -17,7 +18,7 @@ const RegisterPage = () => {
 
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     if (!username || !password) {
       toast.error("Please enter both username and password");
       return;
@@ -26,29 +27,34 @@ const RegisterPage = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post("/api/login", {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      const response = await appAxios.post("/api/v1/auth/register", {
         username,
         password,
+        timezone,
       });
 
-      const { access_token } = response.data;
-
-      if (access_token) {
-        localStorage.setItem("access_token", access_token);
-        toast.success("Login successful!");
-        navigate("/", { replace: true });
+      // 🎯 after registration, redirect to login instead of logging in directly
+      if (response.status === 201 || response.status === 200) {
+        toast.success("Registration successful! Please log in.");
+        navigate("/login", { replace: true });
       } else {
-        toast.error("Login failed: Invalid response from server");
+        toast.error("Registration failed: Invalid response from server");
       }
-    } catch {
-      toast.error("Login failed: Incorrect username or password");
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message ||
+          "Registration failed: Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-green-900 flex flex-col gap-6 items-center justify-center p-4">
+      <GameWelcomeText />
       <Card className="w-full max-w-md shadow-lg">
         <CardContent className="p-8">
           <Typography
@@ -91,7 +97,7 @@ const RegisterPage = () => {
               fullWidth
               variant="contained"
               size="large"
-              onClick={handleLogin}
+              onClick={handleRegister}
               disabled={loading}
               className="mt-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium"
               sx={{
@@ -103,6 +109,13 @@ const RegisterPage = () => {
             >
               {loading ? "Creating Please wait..." : "Register"}
             </Button>
+          </div>
+
+          <div className="py-2">
+            Already have an account?{" "}
+            <span className="text-blue-600 font-medium">
+              <Link to={"/login"}>Login</Link>
+            </span>
           </div>
         </CardContent>
       </Card>

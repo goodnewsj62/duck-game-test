@@ -1,5 +1,8 @@
 "use client";
 
+import { StoreProvider } from "@/components/AppStoreProvider";
+import GameWelcomeText from "@/components/GameWelcomeText";
+import { appAxios } from "@/http";
 import {
   Button,
   Card,
@@ -7,12 +10,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import axios from "axios";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 const LoginPage = () => {
+  const queryClient = useQueryClient();
+  const { setState } = useContext(StoreProvider);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,19 +33,30 @@ const LoginPage = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post("/api/login", {
+      const response = await appAxios.post("/api/v1/auth/login", {
         username,
         password,
       });
 
-      const { access_token } = response.data;
+      const { access_token, user } = response.data;
 
       if (access_token) {
+        setState((prev: any) => ({
+          ...prev,
+          role: user.role,
+          timezone: user.timezone,
+          username: user.username,
+        }));
+
         localStorage.setItem("access_token", access_token);
         toast.success("Login successful!");
+        setTimeout(
+          () => queryClient.invalidateQueries({ queryKey: ["authUser"] }),
+          20
+        );
         navigate("/", { replace: true });
       } else {
-        toast.error("Login failed: Invalid response from server");
+        toast.error("Login failed:  Invaid response from server");
       }
     } catch {
       toast.error("Login failed: Incorrect username or password");
@@ -50,7 +66,8 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-green-900 flex gap-6 flex-col items-center justify-center p-4">
+      <GameWelcomeText />
       <Card className="w-full max-w-md shadow-lg">
         <CardContent className="p-8">
           <Typography
@@ -105,6 +122,13 @@ const LoginPage = () => {
             >
               {loading ? "Logging in..." : "Log In"}
             </Button>
+          </div>
+
+          <div className="py-2">
+            Do not have an account?{" "}
+            <span className="text-blue-600 font-medium">
+              <Link to={"/register"}> register</Link>
+            </span>
           </div>
         </CardContent>
       </Card>
