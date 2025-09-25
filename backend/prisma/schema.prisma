@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+enum Role {
+  ADMIN
+  NIKITA
+  SURVIVOR
+}
+
+
+model Account {
+  id String @id @default(uuid())
+  username String   @unique 
+  password String 
+  role  Role @default(SURVIVOR)
+  timezone String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  createdRounds Round[]
+  roundScores RoundScore[]
+
+  @@map("account") 
+}
+
+
+
+model Round {
+  id String @id @default(uuid())
+  startDate DateTime  @map("start_date")
+  endDate DateTime  @map("end_date")
+
+
+  //  top scorer id 
+  // top score
+
+  creatorId String? @map("creator_id")
+  creatorBy Account? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  roundScores RoundScore[]
+
+
+  @@index([startDate, endDate],name:"start_date_end_date_idx") 
+  @@index([createdAt],name:"round_created_at_idx")    
+
+  @@map("round")
+}
+
+
+
+model RoundScore {
+  id      String @id @default(uuid())
+ 
+  score   Int    @default(0)
+  taps    Int    @default(0)
+
+  userId String @map("user_id")
+  roundId String  @map("round_id")
+  
+  round Round @relation(fields: [roundId], references: [id],  onDelete: Restrict)
+  user  Account  @relation(fields: [userId], references: [id],  onDelete: Restrict)
+
+  @@unique([roundId, userId])
+
+  @@index([roundId, score], name:"round_id_score_idx")     
+  @@index([userId],  name: "round_score_user_id_idx")    
+
+  @@map("round_score")
+}
+
