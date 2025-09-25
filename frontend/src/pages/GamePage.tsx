@@ -74,7 +74,7 @@ function GapeCompWrapper({ round }: { round: RoundResp }) {
   const [firstMoment] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  const { getScore, score, sendTap } = useTap(
+  const { getScore, score, sendTap, roundStat } = useTap(
     localStorage.getItem("access_token") || ""
   );
 
@@ -88,12 +88,6 @@ function GapeCompWrapper({ round }: { round: RoundResp }) {
 
     return () => clearInterval(interval);
   }, []);
-
-
-  useEffect(())
-  
-
- 
 
   const showCooling = currentTime <= skewStart;
   const showInteractive =
@@ -110,12 +104,13 @@ function GapeCompWrapper({ round }: { round: RoundResp }) {
   const totalTimeReference =
     (skewStart.getTime() - firstMoment.getTime()) / 1000;
 
-  
-    useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  useEffect(() => {
+    if (showScore) {
+      const t_id = setTimeout(() => getScore(round.id), 1000);
+      return () => clearTimeout(t_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showScore]);
 
   return (
     <>
@@ -132,7 +127,6 @@ function GapeCompWrapper({ round }: { round: RoundResp }) {
         <ActiveGame points={score ?? 0} timeLeft={secondsToGameEnd}>
           <ZombieTap
             onClick={() => {
-              console.log("tap");
               sendTap(round.id);
             }}
           />
@@ -140,10 +134,10 @@ function GapeCompWrapper({ round }: { round: RoundResp }) {
       )}
       {showScore && (
         <FinalScore
-          myPoints={100}
-          topPoint={100}
+          myPoints={roundStat?.totalScore ?? 0}
+          topPoint={roundStat?.taps ?? 0}
           totalPoint={200}
-          username="me"
+          username={roundStat?.username ?? "uknown"}
         >
           <ZombieTap onClick={() => {}} />
         </FinalScore>

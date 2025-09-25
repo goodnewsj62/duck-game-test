@@ -22,14 +22,14 @@ export function useTap(token: string) {
 
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      console.log("📩 Incoming:", message);
+      //   console.log("📩 Incoming:", message);
 
       switch (message.event) {
         case "score-updated":
           setScore(message.data.score);
           break;
         case "round-score":
-          setRoundStat(message.data.score);
+          setRoundStat(message.data);
           break;
         case "error":
           toast.error(message.data.message);
