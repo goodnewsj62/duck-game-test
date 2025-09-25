@@ -134,9 +134,9 @@ function GapeCompWrapper({ round }: { round: RoundResp }) {
       )}
       {showScore && (
         <FinalScore
-          myPoints={roundStat?.totalScore ?? 0}
-          topPoint={roundStat?.taps ?? 0}
-          totalPoint={200}
+          myPoints={roundStat?.score ?? 0}
+          topPoint={roundStat?.higestest ?? 0}
+          totalPoint={roundStat?.totalScore ?? 0}
           username={roundStat?.username ?? "uknown"}
         >
           <ZombieTap onClick={() => {}} />
