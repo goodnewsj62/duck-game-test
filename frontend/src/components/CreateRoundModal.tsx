@@ -3,11 +3,12 @@
 import { Button, Modal } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useContext, useState } from "react";
 
 import { appAxios } from "@/http";
 import dayjs, { Dayjs } from "dayjs";
 import { toast } from "sonner";
+import { StoreProvider } from "./AppStoreProvider";
 import LoadingModal from "./LoadingModal";
 
 type CreateRoundProps = {
@@ -16,6 +17,7 @@ type CreateRoundProps = {
 
 export default function CreateRound({ onClose }: CreateRoundProps) {
   const [startsAt, setStartsAt] = useState<Dayjs | null>(dayjs());
+  const { username } = useContext(StoreProvider);
 
   const queryClient = useQueryClient();
 
@@ -29,7 +31,7 @@ export default function CreateRound({ onClose }: CreateRoundProps) {
     },
     onSuccess: () => {
       toast.success("Round has beedn created");
-      queryClient.invalidateQueries({ queryKey: ["rounds"] });
+      queryClient.invalidateQueries({ queryKey: ["rounds", true, username] });
       onClose();
     },
   });

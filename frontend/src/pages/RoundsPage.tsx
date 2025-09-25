@@ -25,6 +25,7 @@ const RoundsListPage = () => {
         })
       ).data;
     },
+    refetchInterval: 5_000,
   });
 
   const handleLogout = () => {
