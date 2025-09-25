@@ -14,7 +14,7 @@ const RoundsListPage = () => {
   const isAdmin = role === "ADMIN";
 
   const { data, status } = useQuery({
-    queryKey: ["rounds", isAdmin],
+    queryKey: ["rounds", isAdmin, username],
     queryFn: async (): Promise<RoundResp[]> => {
       const url = isAdmin ? "/api/v1/rounds" : "/api/v1/rounds/valid";
       return (
