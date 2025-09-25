@@ -1,55 +1,43 @@
-import image from "@/assets/Zombie-Duck-no-bg.svg";
-import { useEffect, useState } from "react";
-import { FaArrowLeft, FaRegClock } from "react-icons/fa";
+import ActiveGame from "@/components/ActiveGame";
+import { StoreProvider } from "@/components/AppStoreProvider";
+import CoolDownZombie from "@/components/CoolDownZombie";
+import FinalScore from "@/components/FinalScore";
+import ZombieTap from "@/components/ZombieTap";
+import { useTap } from "@/hooks/useTapHook";
+import { appAxios } from "@/http";
+import { CircularProgress } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { addSeconds, parseISO } from "date-fns";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { FaArrowLeft } from "react-icons/fa";
+import { useParams } from "react-router";
 
 const GamePage = () => {
-  const [timeUntilStart, setTimeUntilStart] = useState(15); // seconds
-  const playerName = "Player Name";
-
-  // Countdown timer
-  useEffect(() => {
-    if (timeUntilStart > 0) {
-      const timer = setTimeout(
-        () => setTimeUntilStart(timeUntilStart - 1),
-        1000
-      );
-      return () => clearTimeout(timer);
-    }
-  }, [timeUntilStart]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
-  const handleBack = () => {
-    console.log("Navigate back to rounds list");
-  };
-
-  // Create the circle pattern using ASCII-like blocks (same as active round)
-  const CirclePattern = () => (
-    <div className="font-mono  relative text-xs leading-none select-none mb-8  cursor-pointer">
-      <img src={image} alt="duck" />
-      <button
-        type="button"
-        className="text-2xl text-white font-black absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-[rgba(0,0,0,0.4)] rounded-2xl"
-      >
-        Tap
-      </button>
-    </div>
-  );
+  const { id } = useParams();
+  const { username } = useContext(StoreProvider);
+  const { data, status } = useQuery({
+    queryKey: ["query", id],
+    queryFn: async (): Promise<RoundResp> => {
+      return (
+        await appAxios.get(`/api/v1/rounds/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        })
+      ).data;
+    },
+    enabled: !!id,
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-md mx-auto">
-        {/* Header */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <button
-              onClick={handleBack}
+              onClick={() => {
+                window.history.back();
+              }}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
               <FaArrowLeft size={20} />
@@ -57,68 +45,187 @@ const GamePage = () => {
                 Cooldown
               </span>
             </button>
-            <div className="text-lg font-medium text-gray-600">
-              {playerName}
-            </div>
+            <div className="text-lg font-medium text-gray-600">{username}</div>
           </div>
         </div>
 
-        {/* Game Area */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-          {/* Circle Pattern (dimmed) */}
-          {/* <div className="pointer-events-none opacity-70"> */}
-          <div className="">
-            <CirclePattern />
+        {status === "pending" && (
+          <div className="min-h-16  w-full flex flex-col items-center justify-center gap-6">
+            <CircularProgress />
+            <div>Loading data please wait...</div>
           </div>
-
-          {/* Status and Info */}
-          <div className="space-y-4">
-            <div className="text-2xl font-bold text-orange-600 flex items-center justify-center gap-2">
-              <FaRegClock size={24} />
-              Cooldown
-            </div>
-
-            <div className="text-lg font-semibold text-gray-800">
-              Time until round starts:
-              <div className="text-blue-600 font-mono text-xl mt-1">
-                {formatTime(timeUntilStart)}
-              </div>
-            </div>
+        )}
+        {status === "error" && (
+          <div className="min-h-16  w-full flex flex-col items-center justify-center gap-6">
+            <h3>An Error Occurred</h3>
+            <p>please refresh and try again</p>
           </div>
+        )}
 
-          {/* Status message */}
-          <div className="mt-8 text-center">
-            <div className="text-sm text-gray-500 mb-2">
-              Get ready for the next round!
-            </div>
-            <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-2 rounded-full text-sm font-medium">
-              <FaRegClock size={16} />
-              Waiting period active
-            </div>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="text-sm text-gray-600 mb-2">Round starting in:</div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-orange-500 h-2 rounded-full transition-all duration-1000 ease-linear"
-              style={{ width: `${((15 - timeUntilStart) / 15) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Instructions */}
-        <div className="mt-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <div className="text-sm text-orange-800">
-            <strong>Cooldown period:</strong> Please wait for the next round to
-            begin. Use this time to prepare!
-          </div>
-        </div>
+        {status === "success" && <GapeCompWrapper round={data} />}
       </div>
     </div>
   );
 };
 
 export default GamePage;
+
+function GapeCompWrapper({ round }: { round: RoundResp }) {
+  const [firstMoment] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  const { getScore, score, sendTap } = useTap(
+    localStorage.getItem("access_token") || ""
+  );
+
+  const skewStart = useMemo(
+    () => addSeconds(parseISO(round.startDate), round.coolingDuration),
+    [round.startDate, round.coolingDuration]
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+
+  useEffect(())
+  
+
+ 
+
+  const showCooling = currentTime <= skewStart;
+  const showInteractive =
+    currentTime >= skewStart && currentTime <= new Date(round.endDate);
+  const showScore = currentTime >= new Date(round.endDate);
+
+  const secondsToGameEnd =
+    (new Date(round.endDate).getTime() - currentTime.getTime()) / 1000;
+
+  const secondsToGameStart =
+    (skewStart.getTime() - currentTime.getTime()) / 1000;
+  const isCooling =
+    currentTime > new Date(round.startDate) && currentTime < skewStart;
+  const totalTimeReference =
+    (skewStart.getTime() - firstMoment.getTime()) / 1000;
+
+  
+    useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <>
+      {showCooling && (
+        <CoolDownZombie
+          timeUntilStart={secondsToGameStart}
+          totalTime={totalTimeReference}
+          isCooling={isCooling}
+        >
+          <ZombieTap onClick={() => {}} />
+        </CoolDownZombie>
+      )}
+      {showInteractive && (
+        <ActiveGame points={score ?? 0} timeLeft={secondsToGameEnd}>
+          <ZombieTap
+            onClick={() => {
+              console.log("tap");
+              sendTap(round.id);
+            }}
+          />
+        </ActiveGame>
+      )}
+      {showScore && (
+        <FinalScore
+          myPoints={100}
+          topPoint={100}
+          totalPoint={200}
+          username="me"
+        >
+          <ZombieTap onClick={() => {}} />
+        </FinalScore>
+      )}
+    </>
+  );
+}
+
+//  const [timeUtilEnd, setTimeUntilEnd] = useState(totalSecondsBeforeEnd);
+
+//   useEffect(() => {
+//     if (timeUtilEnd > 0) {
+//       const id_ = setTimeout(() => {
+//         setTimeUntilEnd((secs) => secs - 1);
+
+//         if (new Date(round.startDate).getTime() - new Date().getTime() <= 0) {
+//           setStartGame(true);
+//         }
+//       }, 1000);
+//       return () => clearTimeout(id_);
+//     }
+//   }, [timeUtilEnd, setTimeUntilEnd, setStartGame, round.startDate]);
+
+//   const totalSecondsBeforeStart =
+//     (addSeconds(parseISO(round.startDate), round.coolingDuration).getTime() -
+//       nowInMilli) /
+//     1000;
+
+//   const timeLeftToStart =
+//     timeUtilEnd - (totalSecondsBeforeEnd - totalSecondsBeforeStart);
+
+//   // const handleBack = () => {
+//   //   console.log("Navigate back to rounds list");
+//   // };
+
+//   console.log("***", startGame);
+
+// function GapeCompWrapper({ round }: { round: RoundResp }) {
+//   const [nowInMilli] = useState(new Date().getTime());
+
+//   const totalSecondsBeforeStart =
+//     (addSeconds(parseISO(round.startDate), round.coolingDuration).getTime() -
+//       nowInMilli) /
+//     1000;
+
+//   const [timeUntilStart, setTimeUnitStart] = useState(totalSecondsBeforeStart);
+
+//   const totalSecondsBeforeEnd =
+//     (new Date(round.endDate).getTime() - nowInMilli) / 1000;
+//   const [timeUtilEnd, setTimeUntilEnd] = useState(totalSecondsBeforeEnd);
+
+//   useEffect(() => {
+//     if (timeUtilEnd > 0) {
+//       const id_ = setTimeout(() => {
+//         setTimeUntilEnd((secs) => secs - 1);
+//       }, 1000);
+//       return () => clearTimeout(id_);
+//     }
+//   }, [timeUtilEnd, setTimeUntilEnd]);
+
+//   useEffect(() => {
+//     if (timeUntilStart > 0) {
+//       const id_ = setTimeout(() => {
+//         setTimeUnitStart((secs) => secs - 1);
+//       }, 1000);
+//       return () => clearTimeout(id_);
+//     }
+//   }, [timeUntilStart, setTimeUnitStart]);
+
+//   return (
+//     <>
+//       {!startGame && timeLeftToStart > 0 && (
+//         <CoolDownZombie
+//           timeUntilStart={timeLeftToStart}
+//           totalTime={totalSecondsBeforeStart}
+//         />
+//       )}
+//       {startGame && timeUtilEnd > 0 ? (
+//         <ActiveGame points={0} timeLeft={timeUtilEnd} />
+//       ) : (
+//         ""
+//       )}
+//     </>
+//   );
+// }

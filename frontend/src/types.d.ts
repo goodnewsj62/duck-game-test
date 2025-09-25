@@ -5,3 +5,11 @@ type RoundResp = {
   coolingDuration: number;
   roundDuration: number;
 };
+
+type RoundStat = {
+  score: number;
+  taps: number;
+  higestest: number;
+  username: string;
+  totalScore?: number;
+};

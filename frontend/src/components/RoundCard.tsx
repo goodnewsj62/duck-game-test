@@ -1,4 +1,4 @@
-import { addMinutes, format, parseISO } from "date-fns";
+import { addSeconds, format, parseISO } from "date-fns";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
@@ -12,7 +12,7 @@ export default function RoundCard({ round }: { round: RoundResp }) {
       setStatus(
         getStatus(round.startDate, round.endDate, round.coolingDuration)
       );
-    }, 30 * 1000); // 🔁 recalc status every 30s
+    }, 1000); // 🔁 recalc status every 30s
 
     return () => clearInterval(interval);
   }, [round.startDate, round.endDate, round.coolingDuration]);
@@ -61,12 +61,15 @@ export default function RoundCard({ round }: { round: RoundResp }) {
 
 function getStatus(startAt: string, endAt: string, cooling: number) {
   const now = new Date();
+
   if (now > new Date(endAt))
     return { color: "text-red-500 bg-red-100", status: "expired" };
 
   if (now < new Date(startAt))
     return { color: "text-orange-500 bg-orange-100", status: "pending" };
-  if (now > new Date(startAt) && now < addMinutes(parseISO(startAt), cooling))
+
+  if (now > new Date(startAt) && now < addSeconds(parseISO(startAt), cooling))
     return { color: "text-yellow-600 bg-yellow-100", status: "Cooldown" };
+
   return { color: "text-green-600 bg-green-100", status: "active" };
 }
